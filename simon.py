@@ -53,28 +53,28 @@ class Button:
 
 class RedButton(Button):
     def __init__(self, surface, x, y, w, h):
-        self.rgb = ((125, 0, 0), (255, 0, 0))
+        self.rgb = ((105, 0, 0), (255, 0, 0))
         self.tone = 440
         super().__init__(surface, "RED", self.rgb, self.tone, x, y, w, h)
 
 
 class GreenButton(Button):
     def __init__(self, surface, x, y, w, h):
-        self.rgb = ((0, 125, 0), (0, 255, 0))
+        self.rgb = ((0, 105, 0), (0, 255, 0))
         self.tone = 164.81
         super().__init__(surface, "GREEN", self.rgb, self.tone, x, y, w, h)
 
 
 class BlueButton(Button):
     def __init__(self, surface, x, y, w, h):
-        self.rgb = ((0, 0, 125), (0, 0, 255))
+        self.rgb = ((0, 0, 105), (0, 0, 255))
         self.tone = 329.63
         super().__init__(surface, "BLUE", self.rgb, self.tone, x, y, w, h)
 
 
 class YellowButton(Button):
     def __init__(self, surface, x, y, w, h):
-        self.rgb = ((125, 125, 0), (255, 255, 0))
+        self.rgb = ((105, 105, 0), (255, 255, 0))
         self.tone = 277.18
         super().__init__(surface, "YELLOW", self.rgb, self.tone, x, y, w, h)
 
@@ -84,16 +84,38 @@ class Board:
         self.width = width
         self.height = height
         self.screen = pg.display.set_mode((self.width, self.height))
-        self.banner_h = 40
+        self.screen.fill((155, 155, 155))
+        pg.display.update()
+        self.border = 10
+        self.banner_h = 50
         self.banner_rgb = (0, 0, 0)
-        self.banner_rect = pg.Rect(0, 0, self.width, self.banner_h)
+        self.banner_rect = pg.Rect(0 + self.border,
+                                   0 + self.border,
+                                   self.width - self.border * 2,
+                                   self.banner_h - self.border * 2)
         self.draw_banner(0, 0)
-        self.button_h = (self.height - self.banner_h) / 2
-        self.button_w = self.width / 2
-        self.buttons = {"RED": RedButton(self.screen, 0, self.banner_h, self.button_w, self.button_h),
-                        "GREEN": GreenButton(self.screen, self.button_w, self.banner_h, self.button_w, self.button_h),
-                        "BLUE": BlueButton(self.screen, 0, self.banner_h + self.button_h, self.button_w, self.button_h),
-                        "YELLOW": YellowButton(self.screen, self.button_w, self.banner_h + self.button_h, self.button_w, self.button_h)}
+        self.button_h = (self.height - self.banner_h - self.border * 2) / 2
+        self.button_w = (self.width - self.border * 3) / 2
+        self.buttons = {"RED": RedButton(self.screen,
+                                         self.border,
+                                         self.banner_h,
+                                         self.button_w,
+                                         self.button_h),
+                        "GREEN": GreenButton(self.screen,
+                                             self.button_w + self.border * 2,
+                                             self.banner_h,
+                                             self.button_w,
+                                             self.button_h),
+                        "BLUE": BlueButton(self.screen,
+                                           self.border,
+                                           self.banner_h + self.border + self.button_h,
+                                           self.button_w,
+                                           self.button_h),
+                        "YELLOW": YellowButton(self.screen,
+                                               self.button_w + self.border * 2,
+                                               self.banner_h + self.border + self.button_h,
+                                               self.button_w,
+                                               self.button_h)}
 
     def draw_banner(self, score, hiscore, msg=None):
         pg.draw.rect(self.screen, self.banner_rgb, self.banner_rect)
@@ -106,8 +128,8 @@ class Board:
         hiscore_txt = font1.render(f"HI-SCORE: {hiscore}", True, (205, 175, 0))
         msg_txt = font2.render(msg, True, (205, 175, 0))
         # centre the messages
-        score_txt_rect = score_txt.get_rect(center=(35, self.banner_h / 2))
-        hiscore_txt_rect = hiscore_txt.get_rect(center=(self.width - 55, self.banner_h / 2))
+        score_txt_rect = score_txt.get_rect(center=(45, self.banner_h / 2))
+        hiscore_txt_rect = hiscore_txt.get_rect(center=(self.width - 65, self.banner_h / 2))
         msg_txt_rect = msg_txt.get_rect(center=(self.width / 2, self.banner_h / 2))
         # display
         self.screen.blit(score_txt, score_txt_rect)
@@ -116,8 +138,16 @@ class Board:
         pg.display.update(self.banner_rect)
 
     def demo(self):
-        for c, b in self.buttons.items():
-            b.flash(on=0.15, off=0.05)
+        notes = ["GREEN", "YELLOW", "BLUE", "RED", "BLUE", "YELLOW"]
+        for n in notes:
+            self.buttons[n].flash(on=0.25, off=0.05)
+
+    def fanfare(self):
+        notes = ["GREEN", "YELLOW", "BLUE", "RED"]
+        length = [250, 250, 250, 500]
+        for i in range(len(notes)):
+            sounds.Tone(self.buttons[notes[i]].tone, 'b', 0.1).play(-1, maxtime=length[i])
+            time.sleep(length[i] / 1000)
 
 
 class Game:
@@ -166,6 +196,7 @@ def main():
     pg.init()
     pg.display.set_caption('Simon')
     board = Board(700, 550)
+    # board.fanfare()
     mode = "DEMO"
     while True:
         if mode == "DEMO":
@@ -185,22 +216,24 @@ def main():
             board.draw_banner(game.score, hiscore, msg)
             while match:
                 game.extend_seq()
-                msg = game.check_score() or msg
-                board.draw_banner(game.score, hiscore, msg)
+                new_msg = game.check_score()
+                if new_msg:
+                    board.draw_banner(game.score, hiscore, new_msg)
+                    board.fanfare()
+                else:
+                    board.draw_banner(game.score, hiscore, msg)
                 time.sleep(0.5)
                 for clr in game.seq_to_text():
                     board.buttons[clr].flash()
                 pg.event.clear()
                 while len(game.current_seq) > 0:
-                    pressed = None
                     event = pg.event.wait()
                     if event.type == pg.MOUSEBUTTONDOWN:
                         for clr, btn in board.buttons.items():
                             if btn.mouseover(event):
-                                pressed = clr
+                                # pressed = clr
+                                match = game.check_input(clr)
                                 break
-                    if pressed:
-                        match = game.check_input(pressed)
                     if not match:
                         break
                 msg = " "

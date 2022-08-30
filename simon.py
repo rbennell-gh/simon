@@ -96,26 +96,26 @@ class Board:
         self.draw_banner(0, 0)
         self.button_h = (self.height - self.banner_h - self.border * 2) / 2
         self.button_w = (self.width - self.border * 3) / 2
-        self.buttons = {"RED": RedButton(self.screen,
+        self.buttons = {"YELLOW": YellowButton(self.screen,
+                                               self.border,
+                                               self.banner_h,
+                                               self.button_w,
+                                               self.button_h),
+                        "BLUE": BlueButton(self.screen,
+                                           self.button_w + self.border * 2,
+                                           self.banner_h,
+                                           self.button_w,
+                                           self.button_h),
+                        "RED": RedButton(self.screen,
                                          self.border,
-                                         self.banner_h,
+                                         self.banner_h + self.border + self.button_h,
                                          self.button_w,
                                          self.button_h),
                         "GREEN": GreenButton(self.screen,
                                              self.button_w + self.border * 2,
-                                             self.banner_h,
+                                             self.banner_h + self.border + self.button_h,
                                              self.button_w,
-                                             self.button_h),
-                        "BLUE": BlueButton(self.screen,
-                                           self.border,
-                                           self.banner_h + self.border + self.button_h,
-                                           self.button_w,
-                                           self.button_h),
-                        "YELLOW": YellowButton(self.screen,
-                                               self.button_w + self.border * 2,
-                                               self.banner_h + self.border + self.button_h,
-                                               self.button_w,
-                                               self.button_h)}
+                                             self.button_h)}
 
     def draw_banner(self, score, hiscore, msg=None):
         pg.draw.rect(self.screen, self.banner_rgb, self.banner_rect)
@@ -140,14 +140,13 @@ class Board:
     def demo(self):
         notes = ["GREEN", "YELLOW", "BLUE", "RED", "BLUE", "YELLOW"]
         for n in notes:
-            self.buttons[n].flash(on=0.25, off=0.05)
+            self.buttons[n].flash(on=0.2, off=0.05)
 
     def fanfare(self):
         notes = ["GREEN", "YELLOW", "BLUE", "RED"]
-        length = [250, 250, 250, 500]
+        length = [0.25, 0.25, 0.25, 0.5]
         for i in range(len(notes)):
-            sounds.Tone(self.buttons[notes[i]].tone, 'b', 0.1).play(-1, maxtime=length[i])
-            time.sleep(length[i] / 1000)
+            self.buttons[notes[i]].flash(on=length[i], off=0.05)
 
 
 class Game:
